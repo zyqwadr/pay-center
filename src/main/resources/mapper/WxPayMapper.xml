@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="xyz.nesting.payment.dao.wx.WxPayMapper">
+	<insert id="insertWxPayRefundRequest">
+		insert into pay_center_wx_refund_status
+		(out_trade_no, out_refund_no,refund_id,refund_fee,status,creation_time,update_time)
+		values
+		(#{out_trade_no},#{out_refund_no},#{refund_id},${refund_fee},0,NOW(),NOW())
+	</insert>
+	<!-- 记录请求数据 -->
+	<insert id="insertWxPayRequest" parameterType="ScanPayReqData">
+		insert into
+		pay_center_wx_pay_request
+		(out_trade_no,
+		body,total_fee,fee_type,time_start,time_expire,app_id,call_back_url,creation_time,update_time)
+		values
+		(#{out_trade_no}, #{body}, ${total_fee},
+		#{fee_type},#{time_start},#{time_expire},${app_id}
+		,#{call_back_url},NOW(),NOW())
+
+	</insert>
+
+	<!-- 记录请求数据 -->
+	<insert id="insertWxbrowserPayRequest" parameterType="WxBrowserPayReqData">
+		insert into
+		pay_center_wx_pay_request
+		(out_trade_no,
+		body,total_fee,fee_type,time_start,time_expire,app_id,call_back_url,creation_time,update_time)
+		values
+		(#{out_trade_no}, #{body}, ${total_fee},
+		#{fee_type},#{time_start},#{time_expire},${app_id}
+		,#{call_back_url},NOW(),NOW())
+
+	</insert>
+
+	<!-- 记录请求数据 -->
+	<insert id="insertWxAppPayRequest" parameterType="WxAppPayReqData">
+		insert into
+		pay_center_wx_pay_request
+		(out_trade_no,
+		body,total_fee,fee_type,time_start,time_expire,app_id,call_back_url,creation_time,update_time)
+		values
+		(#{out_trade_no}, #{body}, ${total_fee},
+		#{fee_type},#{time_start},#{time_expire},${app_id}
+		,#{call_back_url},NOW(),NOW())
+	</insert>
+
+	<insert id="inserWxNotifyInfo" parameterType="ScanPayResData">
+		insert into
+		pay_center_wx_sync_notify
+		(out_trade_no,
+		result_code,err_code,err_code_des,bank_type,total_fee,fee_type,cash_fee,cash_fee_type,coupon_fee,coupon_count,time_end,transaction_id,
+		trade_type,creation_time,update_time)
+		values
+		(#{out_trade_no},
+		#{result_code},
+		#{err_code},#{err_code_des},#{bank_type},${total_fee},#{fee_type},${cash_fee},#{cash_fee_type},${coupon_fee},${coupon_count},#{time_end},#{transaction_id},
+		#{trade_type},NOW(),NOW()
+		)
+	</insert>
+
+	<select id="selectCallBackUrl" resultType="String">
+		select call_back_url from pay_center_wx_pay_request where out_trade_no =
+		#{out_trade_no} order by update_time DESC limit 1
+	</select>
+	<resultMap type="ScanPayResData" id="BaseResultMap">
+		<!-- column:库表的字段名 property:实体类里的属性名 -->
+		<id column="out_trade_no" property="out_trade_no" />
+		<result column="trade_type" property="trade_type" />
+		<result column="result_code" property="result_code" />
+		<result column="err_code_des" property="err_code_des" />
+		<result column="err_code" property="err_code" />
+	</resultMap>
+
+	<update id="updateWxPayRefundStatus">
+		UPDATE pay_center_wx_refund_status SET status=#{status},update_time=now()
+		WHERE out_trade_no=#{out_trade_no}
+	</update>
+
+	<select id="selectRefundStatus" resultType="string">
+		select out_trade_no from pay_center_wx_refund_status where status=#{status}
+	</select>
+
+	<select id="selectTradeTypeByOutTradeNo" resultType="map">
+		select out_trade_no,trade_type from pay_center_wx_sync_notify where
+		out_trade_no like #{out_trade_no} order by creation_time limit 1
+	</select>
+	
+	<select id="selectTradeTypeFromResult" resultType="map">
+		select out_trade_no,trade_type from pay_center_wx_sync_notify where
+		out_trade_no=#{out_trade_no}  and result_code='SUCCESS' order by creation_time limit 1
+	</select>
+	
+	<select id="selectPaySuccessOrder" resultType="map">
+		select * from pay_center_wx_sync_notify where out_trade_no like
+		#{out_trade_no} and result_code='SUCCESS'
+	</select>
+	<select id="selectCountWxRefundByOutTradeNo" resultType="int">
+		select count(1) from pay_center_wx_refund_status where
+		out_trade_no like #{outTradeNo} and status=1
+	</select>
+	
+	<select id="selectWxSettleMoney" resultType="BigDecimal">
+    	select sum(total_fee) as total_fee from pay_center_wx_sync_notify
+    	
+    	<where>
+			result_code='SUCCESS'
+			<![CDATA[ AND creation_time > #{gtCreateTime} AND creation_time <= #{ltCreateTime} ]]>
+		</where>
+    </select>
+    
+    <select id="selectWxSettleRefundMoney" resultType="BigDecimal">
+    	select sum(refund_fee) as total_fee from pay_center_wx_refund_status
+    	
+    	<where>
+			status = 1
+			<![CDATA[ AND creation_time > #{gtCreateTime} AND creation_time <= #{ltCreateTime} ]]>
+		</where>
+    </select>
+
+</mapper>

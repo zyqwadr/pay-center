@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="xyz.nesting.payment.dao.ali.AliPayMapper">
+	<!-- pay_center_ali_pay_request 表操作 -->
+	
+	
+	<!-- 记录请求数据 -->
+	<insert id="insertAliPayRequest" parameterType="AliPayRequest">
+		insert into pay_center_ali_pay_request 
+		(out_trade_no ,subject , body, show_url, total_fee, appid, creation_time, update_time,call_back_url)
+		values
+		(#{outTradeNo}, #{subject}, #{body}, #{showUrl}, ${totalFee}, ${appId}, NOW(), NOW()
+		,#{callBackUrl})
+	</insert>
+	
+	<!-- 记录回调数据 -->
+	<insert id="inserAliNotifyInfo" parameterType="AliPayNotifySync">
+		insert into pay_center_ali_sync_notify 
+		(out_trade_no ,trade_no , trade_status, total_fee, creation_time, update_time)
+		values
+		(#{outTradeNo}, #{tradeNo}, #{tradeStatus}, #{totalFee}, NOW(), NOW()
+		)
+	</insert>
+	
+	<select id="selectAppId" resultType="int" >
+       select appid from pay_center_ali_pay_request where out_trade_no = #{out_trade_no}
+    </select>
+	
+	<select id="selectCallBackUrl" resultType="String" >
+       select call_back_url from pay_center_ali_pay_request where out_trade_no = #{out_trade_no} order by update_time DESC limit 1
+    </select>
+    
+    <insert id="insertAliRefundRequest">
+    	insert into pay_center_ali_refund_status (out_trade_no,out_request_no,total_fee,refund_fee,status,creation_time,update_time) values (#{outTradeNo},#{outRequestNo},#{totalFee},#{refundFee},#{status},now(),now())
+    </insert>
+    
+    <select id="selectCountAliRefundByOutTradeNo" resultType="int">
+    	select count(1) from pay_center_ali_refund_status where out_trade_no=#{outTradeNo} and status=1
+    </select>
+    
+    <select id="updateAliPayRefundStatus">
+    	UPDATE pay_center_ali_refund_status SET status=#{status},update_time=now() WHERE out_trade_no=#{outTradeNo}
+    </select>
+    
+    <select id="selectRefundStatus" resultType="string">
+    	select out_trade_no from pay_center_ali_refund_status where status=#{status}
+    </select>
+    
+    <select id="selectPaySuccessOrder" resultType="AliPayNotifySync">
+    	select * from pay_center_ali_sync_notify where out_trade_no=#{outTradeNo} and trade_status='TRADE_SUCCESS'
+    </select>
+    
+    <select id="selectAliSettleMoney" resultType="BigDecimal">
+    	select sum(total_fee) as total_fee from pay_center_ali_sync_notify
+    	
+    	<where>
+			trade_status='TRADE_SUCCESS'
+			<![CDATA[ AND creation_time > #{gtCreateTime} AND creation_time <= #{ltCreateTime} ]]>
+		</where>
+    </select>
+    
+    <select id="selectAliSettleRefundMoney" resultType="BigDecimal">
+    	select sum(refund_fee) as total_fee from pay_center_ali_refund_status
+    	
+    	<where>
+			status = 1
+			<![CDATA[ AND creation_time > #{gtCreateTime} AND creation_time <= #{ltCreateTime} ]]>
+		</where>
+    </select>
+
+</mapper>

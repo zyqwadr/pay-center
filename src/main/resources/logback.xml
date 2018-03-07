@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+	<!-- <jmxConfigurator /> -->
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} [%thread - %L] %-5level %logger - %msg%n</pattern>
+		</encoder>
+	</appender>
+	<!-- 演示按时间滚动的策略 -->
+	<appender name="allLogFile"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logs/pay.intbee.com.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>logs/pay.intbee.com.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+			<maxHistory>90</maxHistory>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>500MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<encoder>
+			<pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+	<!-- 综合时间与大小的滚动策略，先按小时滚动，小时内的文件大于10mb时再按大小滚动 -->
+	<appender name="warnLogFile"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>logs/pay.intbee.com.warn.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>logs/pay.intbee.com.warn-%d{yyyy-MM-dd}.%i.log
+			</fileNamePattern>
+			<timeBasedFileNamingAndTriggeringPolicy
+				class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+				<maxFileSize>500MB</maxFileSize>
+			</timeBasedFileNamingAndTriggeringPolicy>
+		</rollingPolicy>
+		<!-- 临界值过滤器,过滤掉低于指定临界值的日志。 -->
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>WARN</level>
+		</filter>
+		<encoder>
+			<pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+	
+	<logger name="org" level="INFO" additivity="false">
+		<appender-ref ref="allLogFile" />
+		<appender-ref ref="console" />
+	</logger>
+	
+	<logger name="xyz" level="DEBUG" additivity="false">
+		<appender-ref ref="allLogFile" />
+		<appender-ref ref="console" />
+	</logger>
+	
+	<root level="DEBUG">
+		<appender-ref ref="allLogFile" />
+		<appender-ref ref="console" />
+	</root>
+</configuration>
